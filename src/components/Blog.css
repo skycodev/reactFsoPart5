@@ -1,0 +1,20 @@
+.delete--btn{
+    background-color: #005ebc;
+    color: #fff;
+    border: none;
+    padding: 2px 2px;
+    cursor: pointer;
+    display: block;
+    margin: .5rem 0;
+}
+.delete--btn:hover{
+    background-color: #003e7c;
+}
+.like--btn{
+    background-color: #83ffc7;
+    color: rgb(53, 53, 53);
+    border: none;
+    padding: 2px 2px;
+    cursor: pointer;
+    margin: .5rem 0;
+}

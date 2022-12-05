@@ -37,6 +37,7 @@
   },
   "proxy": "http://localhost:3003",
   "devDependencies": {
+    "prop-types": "^15.8.1",
     "standard": "^17.0.0"
   }
 }
