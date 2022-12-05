@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import Blog from './components/Blog'
 import Notification from './components/Notification'
-import blogService from './services/blogs'
+import LoginForm from './components/LoginForm'
+import BlogForm from './components/BlogForm'
+
 import loginService from './services/login'
+import blogService from './services/blogs'
 import './App.css'
 
 const App = () => {
@@ -11,15 +14,10 @@ const App = () => {
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
   const [errorMessage, setErrorMessage] = useState(null)
-  const [successMessage, setSuccesMessage] = useState(null)
-  const [newTitle, setNewTitle] = useState('')
-  const [newAuthor, setNewAuthor] = useState('')
-  const [newUrl, setNewUrl] = useState('')
+  const [successMessage, setSuccessMessage] = useState(null)
 
   useEffect(() => {
-    blogService.getAll().then(blogs =>
-      setBlogs(blogs)
-    )
+    blogService.getAll().then(blogs => setBlogs(blogs))
   }, [])
 
   useEffect(() => {
@@ -32,16 +30,12 @@ const App = () => {
 
   const handleLogin = (event) => {
     event.preventDefault()
-    console.log('logging in with', username
-      , password)
     loginService.login({ username, password }).then((response) => {
       window.localStorage.setItem('loggedBlogappUser', JSON.stringify(response))
       setUser(response)
       setUsername('')
       setPassword('')
-      console.log(response)
     }).catch((error) => {
-      console.log(error)
       setErrorMessage(error.response.data.error)
       setTimeout(() => {
         setErrorMessage(null)
@@ -55,25 +49,48 @@ const App = () => {
     setUser(null)
   }
 
-  const addBlog = (event) => {
-    event.preventDefault()
-    const blogObject = {
-      title: newTitle,
-      author: newAuthor,
-      url: newUrl
-    }
+  const addBlog = (blogObject) => {
     blogService.create(blogObject).then((response) => {
-      setBlogs(blogs.concat(response))
-      setNewTitle('')
-      setNewAuthor('')
-      setNewUrl('')
-      setSuccesMessage(`a new blog ${response.title} by ${response.author} added`)
+      const newblogs = [...blogs, response]
+      setBlogs(newblogs)
+      setSuccessMessage(`a new blog ${response.title} by ${response.author} added`)
       setTimeout(() => {
-        setSuccesMessage(null)
+        setSuccessMessage(null)
       }
       , 5000)
     }).catch((error) => {
-      console.log(error)
+      setErrorMessage(error.response.data.error)
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+    })
+  }
+  const updateBlog = (BlogToUpdate) => {
+    blogService.update(BlogToUpdate.id, { likes: BlogToUpdate.likes }).then((response) => {
+      setBlogs(blogs.map(blog => blog.id !== response.id ? blog : response))
+      setSuccessMessage(`blog ${response.title} by ${response.author} updated`)
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }
+      , 5000)
+    }).catch((error) => {
+      setErrorMessage(error.response.data.error)
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+    })
+  }
+
+  const removeBlog = (idBlog) => {
+    blogService.remove(idBlog).then((response) => {
+      setSuccessMessage(`blog ${response.title} by ${response.author} removed`)
+      const updatedBlogs = blogs.filter(blog => blog.id !== idBlog)
+      setBlogs(updatedBlogs)
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }
+      , 5000)
+    }).catch((error) => {
       setErrorMessage(error.response.data.error)
       setTimeout(() => {
         setErrorMessage(null)
@@ -87,27 +104,15 @@ const App = () => {
       <h2>blogs</h2>
       {user === null
         ? (
-          <form onSubmit={handleLogin}>
-            <div>
-              username &nbsp;
-              <input
-                type='text'
-                value={username}
-                name='Username'
-                onChange={({ target }) => setUsername(target.value)}
-              />
-            </div>
-            <div>
-              password &nbsp;
-              <input
-                type='password'
-                value={password}
-                name='Password'
-                onChange={({ target }) => setPassword(target.value)}
-              />
-            </div>
-            <button type='submit'>login</button>
-          </form>
+
+          <LoginForm
+            username={username}
+            password={password}
+            handleUsernameChange={({ target }) => setUsername(target.value)}
+            handlePasswordChange={({ target }) => setPassword(target.value)}
+            handleLogin={handleLogin}
+          />
+
           )
         : (
           <div>
@@ -116,41 +121,20 @@ const App = () => {
               <span> </span>
               <button onClick={handleLogout}>logout</button>
             </div>
-            <h2> create new </h2>
-            <form onSubmit={addBlog}>
-              <div>
-                title &nbsp;
-                <input
-                  type='text'
-                  value={newTitle}
-                  name='Title'
-                  onChange={({ target }) => setNewTitle(target.value)}
+            <BlogForm
+              addBlog={addBlog}
+            />
+            {blogs
+              .sort((a, b) => b.likes - a.likes)
+              .map(blog =>
+                <Blog
+                  key={blog.id}
+                  blog={blog}
+                  updateBlog={updateBlog}
+                  removeBlog={removeBlog}
+                  user={user}
                 />
-              </div>
-              <div>
-                author &nbsp;
-                <input
-                  type='text'
-                  value={newAuthor}
-                  name='Author'
-                  onChange={({ target }) => setNewAuthor(target.value)}
-                />
-              </div>
-              <div>
-                url &nbsp;
-                <input
-                  type='text'
-                  value={newUrl}
-                  name='Url'
-                  onChange={({ target }) => setNewUrl(target.value)}
-                />
-              </div>
-              <button type='submit'>create</button>
-            </form>
-
-            {blogs.map(blog =>
-              <Blog key={blog.id} blog={blog} />
-            )}
+              )}
           </div>
 
           )}
